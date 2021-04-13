@@ -223,7 +223,14 @@ def success():
 
             return [predict_labels(img) for img in images]
 
-
+        # rendering the results on HTML page
+        labels = predict([f.filename], n_top=3)
+        label1 = labels[0][0]
+        label2 = labels[0][1]
+        label3 = labels[0][2]
+        print(labels)
+        os.remove(f.filename)
+        return render_template("success.html", label1=label1,label2=label2,label3=label3)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
