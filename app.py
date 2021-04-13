@@ -112,6 +112,102 @@ def success():
             'windmill', 'yard', 'youth_hostel', 'zen_garden']
 
 
+        def VGG16_Places365(model_file=None):
+            """Instantiates the VGG16-places365 architecture.
+
+            Optionally loads weights pre-trained on Places. Note that when using TensorFlow,
+            for best performance you should set `image_data_format="channels_last"` in your Keras config at ~/.keras/keras.json.
+
+            The model and the weights are compatible with both TensorFlow and Theano.
+            The data format convention used by the model is the one specified in the Keras config file.
+
+            # Returns
+                A Keras model instance.
+            """
+
+            # Determine proper input shape
+            input_shape = _obtain_input_shape(None, default_size=224, min_size=48, data_format=K.image_data_format(),
+                                              require_flatten=True)
+            img_input = Input(shape=input_shape)
+
+            # Block 1
+            x = Conv2D(filters=64, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block1_conv1')(img_input)
+            x = Conv2D(filters=64, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block1_conv2')(x)
+            x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name="block1_pool", padding='valid')(x)
+
+            # Block 2
+            x = Conv2D(filters=128, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block2_conv1')(x)
+            x = Conv2D(filters=128, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block2_conv2')(x)
+            x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name="block2_pool", padding='valid')(x)
+
+            # Block 3
+            x = Conv2D(filters=256, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block3_conv1')(x)
+            x = Conv2D(filters=256, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block3_conv2')(x)
+            x = Conv2D(filters=256, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block3_conv3')(x)
+            x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name="block3_pool", padding='valid')(x)
+
+            # Block 4
+            x = Conv2D(filters=512, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block4_conv1')(x)
+            x = Conv2D(filters=512, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block4_conv2')(x)
+            x = Conv2D(filters=512, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block4_conv3')(x)
+            x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name="block4_pool", padding='valid')(x)
+
+            # Block 5
+            x = Conv2D(filters=512, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block5_conv1')(x)
+            x = Conv2D(filters=512, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block5_conv2')(x)
+            x = Conv2D(filters=512, kernel_size=3, strides=(1, 1), padding='same', kernel_regularizer=l2(0.0002),
+                       activation='relu', name='block5_conv3')(x)
+            x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name="block5_pool", padding='valid')(x)
+
+            # Classification block
+            x = Flatten(name='flatten')(x)
+            x = Dense(4096, activation='relu', name='fc1')(x)
+            x = Dropout(0.5, name='drop_fc1')(x)
+
+            x = Dense(4096, activation='relu', name='fc2')(x)
+            x = Dropout(0.5, name='drop_fc2')(x)
+            x = Dense(365, activation='softmax', name="predictions")(x)
+
+            # Create model.
+            model = Model(img_input, x, name='vgg16-places365')
+
+            # load weights
+            if model_file:
+                model.load_weights(Path(model_file).absolute().as_posix())
+            else:
+                weights_path = get_file('vgg16-places365_weights_tf_dim_ordering_tf_kernels.h5', WEIGHTS_PATH, cache_subdir='models')
+                model.load_weights(weights_path)
+
+            if K.backend() == 'theano':
+                layer_utils.convert_all_kernels_in_model(model)
+
+            if K.image_data_format() == 'channels_first':
+                maxpool = model.get_layer(name='block5_pool')
+                shape = maxpool.output_shape[1:]
+                dense = model.get_layer(name='fc1')
+                layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_last')
+
+                if K.backend() == 'tensorflow':
+                    warnings.warn(
+                        'You are using the TensorFlow backend, yet you are using the Theano image data format convention (`image_data_format="channels_first"`). '
+                        'For best performance, set `image_data_format="channels_last"` in your Keras config at ~/.keras/keras.json.'
+                    )
+                K.clear_session()
+
+            return model
+
 
 
 if __name__ == '__main__':
