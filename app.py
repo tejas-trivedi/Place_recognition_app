@@ -208,6 +208,21 @@ def success():
 
             return model
 
+        # Function to predict the images uploaded. Paramenters: Image File, top 5 labels and model to be used
+        def predict(image_files, n_top=5, model=None):
+    
+            model = model or VGG16_Places365()
+            assert isinstance(image_files, list), 'image_files should be a list'
+            assert len(image_files) > 0, 'image_files should not be empty'
+
+            file2img = lambda f: np.expand_dims(cv2.resize(np.array(Image.open(f), dtype=np.uint8), (224, 224)), 0)
+            images = [file2img(Path(f).absolute().as_posix()) for f in image_files]
+
+            predict_scores = lambda img: np.argsort(model.predict(img)[0])[::-1][0:n_top]
+            predict_labels = lambda img: [CLASS_LABELS[v] for v in predict_scores(img)]
+
+            return [predict_labels(img) for img in images]
+
 
 
 if __name__ == '__main__':
