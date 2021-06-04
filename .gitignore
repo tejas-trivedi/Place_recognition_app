@@ -1,1 +1,7 @@
 env
+
+numpy-1.20.2+mkl-cp37-cp37m-win_amd64.whl
+
+scipy-1.6.2-cp37-cp37m-win_amd64.whl
+
+.elasticbeanstalk

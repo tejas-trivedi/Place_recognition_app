@@ -232,7 +232,9 @@ def success():
         os.remove(f.filename)
         return render_template("success.html", label1=label1,label2=label2,label3=label3)
 
+
 if __name__ == '__main__':
     #port = int(os.environ.get('PORT', 5000))
     #app.run(host='0.0.0.0', port=port, debug=True)
+    app.debug = True
     app.run(threaded=True, port=5000)
